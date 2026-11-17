@@ -6,18 +6,18 @@ Upload this directory as the repository root (package.json alongside README.md).
 
 The project uses the Marketplace publisher ID `Sware`. Confirm this publisher belongs to your account before releasing. Changing publisher changes the extension identity/global storage namespace; development history may not appear under the published identity.
 
-After creating the repository, add real metadata to package.json:
+The repository metadata in package.json is configured as follows:
 
 ```json
 {
   "publisher": "Sware",
-  "repository": { "type": "git", "url": "https://github.com/YOUR_ACCOUNT/YOUR_REPOSITORY.git" },
-  "homepage": "https://github.com/YOUR_ACCOUNT/YOUR_REPOSITORY#readme",
-  "bugs": { "url": "https://github.com/YOUR_ACCOUNT/YOUR_REPOSITORY/issues" }
+  "repository": { "type": "git", "url": "https://github.com/shangfire/ssh-folder-sync.git" },
+  "homepage": "https://github.com/shangfire/ssh-folder-sync#readme",
+  "bugs": { "url": "https://github.com/shangfire/ssh-folder-sync/issues" }
 }
 ```
 
-Do not publish the example values. The metadata is intentionally not filled with a fabricated repository. Review the existing MIT license copyright attribution. An extension icon and genuine screenshots can be added later; neither is fabricated in this project.
+The publisher and repository metadata are configured. Review the existing MIT license copyright attribution. An extension icon and genuine screenshots can be added later; neither is fabricated in this project.
 
 ## Validate and package
 
@@ -47,3 +47,29 @@ Kiro and other editor forks may use a different extension registry. A VS Marketp
 
 执行检查、测试和打包命令，先安装 VSIX 做真实 SSH 验证，再手动上传市场。本仓库不会自动发布，也不包含发布凭据。当前环境未完成 VSIX 打包或市场上传。
 
+
+## Kiro / Open VSX
+
+Kiro uses Open VSX by default, independently of Microsoft's Marketplace:
+https://kiro.dev/docs/ide/editor/extension-registry/
+
+The same VSIX can be published to both registries. No separate Kiro build is required.
+
+1. Sign in at https://open-vsx.org with GitHub and complete the publisher agreement/account steps requested there.
+2. Create a personal access token in your Open VSX account. Keep it private.
+3. Create or obtain access to the namespace `Sware`, matching package.json's publisher. Microsoft Marketplace publisher ownership does not grant Open VSX namespace ownership.
+4. Use the Open VSX CLI to publish the existing package:
+
+```powershell
+# Set OVSX_PAT privately in this terminal; do not commit or share the token.
+npx.cmd --yes ovsx create-namespace Sware
+npx.cmd --yes ovsx publish ..\ssh-folder-sync-0.3.0.vsix
+```
+
+Skip namespace creation if it already exists and your account has access. The CLI reads `OVSX_PAT` from the environment. If the namespace belongs to another account, resolve access before publishing; do not silently change publisher identity.
+
+After publishing, verify the listing and install through Kiro's extension search. The existing local VSIX can also be installed directly in Kiro for testing.
+
+Official guide: https://github.com/eclipse-openvsx/openvsx/wiki/Publishing-Extensions
+
+中文：Kiro 默认使用 Open VSX，需独立注册并取得 Sware 命名空间权限；VS Code 市场的发布者身份不会自动同步。可以复用当前 VSIX，无需单独构建。先完成账户协议、配置私密 OVSX_PAT 环境变量，再执行上述命令。不要把 token 写入仓库或聊天。

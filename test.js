@@ -83,3 +83,10 @@ test('读取 SSH Host 与 Include，忽略通配 Host 和注释',async()=>{
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'sfs-hosts-'));
  try{await fs.writeFile(path.join(root,'extra'),'Host other\n');await fs.writeFile(path.join(root,'config'),'Host one two # ignored\nHost * !excluded\nInclude "'+path.join(root,'extra').replaceAll('\\','/')+'"\n');assert.deepEqual(await aliases(path.join(root,'config')),['one','other','two']);}finally{await fs.rm(root,{recursive:true,force:true});}
 });
+
+test('远端路径接受 POSIX、Windows 盘符与 UNC 路径',()=>{
+ const {absoluteRemotePath,remotePathApi}=require('./remote-path');
+ assert.ok(absoluteRemotePath('C:\\Users\\test'));assert.ok(absoluteRemotePath('D:/data'));assert.ok(absoluteRemotePath('/home/test'));
+ assert.ok(!absoluteRemotePath('C:data'));assert.ok(!absoluteRemotePath('relative'));
+ assert.equal(remotePathApi('C:\\data').join('C:\\data','child'),'C:\\data\\child');
+});

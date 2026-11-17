@@ -11,7 +11,12 @@ def target(rel):
  return p
 op=q['op']
 if op=='browse':
- print(json.dumps({'path':root,'directories':sorted([e.name for e in os.scandir(root) if e.is_dir(follow_symlinks=False)])}))
+ drives=[]
+ if os.name=='nt':
+  import ctypes
+  mask=ctypes.windll.kernel32.GetLogicalDrives()
+  drives=[chr(65+i)+':'+os.sep for i in range(26) if mask & (1 << i)]
+ print(json.dumps({'path':root,'drives':drives,'directories':sorted([e.name for e in os.scandir(root) if e.is_dir(follow_symlinks=False)])}))
 elif op=='scan':
  out={}
  for base,dirs,files in os.walk(root,followlinks=False):

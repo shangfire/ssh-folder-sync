@@ -46,5 +46,9 @@ Object.assign(en,{manualHost:'Enter SSH Host manually…',chooseHost:'Choose a H
 Object.assign(zh,{manualHost:'手动输入 SSH Host…',chooseHost:'选择 ~/.ssh/config 中的 Host',selectDirectory:'选择当前目录',enterDirectory:'输入路径…',browseDirectory:'进入子目录，或选择当前目录'});
 Object.assign(en,{offlinePath:'Enter path (offline)',onlineBrowse:'Browse remote directories (connect)',pathMethod:'How would you like to set the remote directory?',offlinePathPrompt:'Absolute remote directory (saved without connection or validation)',browseFailed:'Unable to browse remote directories: {0}',connectionSaved:'Connection saved. Open it or refresh to connect and compare.'});
 Object.assign(zh,{offlinePath:'手动输入路径（离线）',onlineBrowse:'浏览远端目录（需要连接）',pathMethod:'选择远端目录的设置方式',offlinePathPrompt:'远端绝对目录（直接保存，不连接、不验证）',browseFailed:'无法浏览远端目录：{0}',connectionSaved:'连接已保存，打开连接或刷新时再连接比较。'});
+Object.assign(en,{choosePython:'Python command on SSH target (Windows: python or py -3; Linux: python3)'});
+Object.assign(zh,{choosePython:'SSH 目标的 Python 命令（Windows 选 python 或 py -3，Linux 通常选 python3）'});
+Object.assign(en,{chooseDrive:'Choose a drive…'});
+Object.assign(zh,{chooseDrive:'选择磁盘…'});
 function translator(language){return (text,...args)=>{const template=language.toLowerCase().startsWith('zh')?(zh[text]||text):(en[text]||text);return template.replace(/\{(\d+)\}/g,(_,i)=>String(args[Number(i)]));};}
 module.exports={translator};

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Accept Windows drive-letter and UNC paths in remote directory input.
+- Preserve Windows path separators when browsing remote directories.
+- This does not constitute end-to-end Windows SSH target compatibility validation.
+
 ## 0.3.0
 
 Initial public release candidate.
