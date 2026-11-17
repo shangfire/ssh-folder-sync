@@ -1,0 +1,8 @@
+.github/**
+.vscode/**
+.gitignore
+.vscodeignore
+test.js
+scripts/**
+PUBLISHING.md
+CONTRIBUTING.md

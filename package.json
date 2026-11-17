@@ -1,0 +1,194 @@
+{
+  "name": "ssh-folder-sync",
+  "displayName": "SSH Folder Sync",
+  "description": "%description%",
+  "version": "0.3.0",
+  "publisher": "local-tools",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onView:sshFolderSync"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "sfs.configure",
+        "title": "%sfs.configure%",
+        "shortTitle": "%sfs.configure.short%"
+      },
+      {
+        "command": "sfs.refresh",
+        "title": "%sfs.refresh%",
+        "shortTitle": "%sfs.refresh.short%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sfs.upload",
+        "title": "%sfs.upload%",
+        "shortTitle": "%sfs.upload.short%"
+      },
+      {
+        "command": "sfs.download",
+        "title": "%sfs.download%",
+        "shortTitle": "%sfs.download.short%"
+      },
+      {
+        "command": "sfs.diff",
+        "title": "%sfs.diff%",
+        "shortTitle": "%sfs.diff.short%"
+      },
+      {
+        "command": "sfs.open",
+        "title": "%sfs.open%",
+        "shortTitle": "%sfs.open.short%"
+      },
+      {
+        "command": "sfs.close",
+        "title": "%sfs.close%",
+        "shortTitle": "%sfs.close.short%",
+        "icon": "$(close)"
+      },
+      {
+        "command": "sfs.edit",
+        "title": "%sfs.edit%",
+        "shortTitle": "%sfs.edit.short%"
+      },
+      {
+        "command": "sfs.rename",
+        "title": "%sfs.rename%",
+        "shortTitle": "%sfs.rename.short%"
+      },
+      {
+        "command": "sfs.delete",
+        "title": "%sfs.delete%",
+        "shortTitle": "%sfs.delete.short%"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "sshFolderSync",
+          "name": "%view%"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "sfs.configure",
+          "when": "view == sshFolderSync",
+          "group": "sync@3"
+        },
+        {
+          "command": "sfs.refresh",
+          "when": "view == sshFolderSync && sfs.active",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sfs.upload",
+          "when": "view == sshFolderSync && sfs.active",
+          "group": "sync@1"
+        },
+        {
+          "command": "sfs.download",
+          "when": "view == sshFolderSync && sfs.active",
+          "group": "sync@2"
+        },
+        {
+          "command": "sfs.close",
+          "when": "view == sshFolderSync && sfs.active",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sfs.diff",
+          "when": "view == sshFolderSync && sfs.active"
+        },
+        {
+          "command": "sfs.edit",
+          "when": "view == sshFolderSync && viewItem == sfs.history"
+        },
+        {
+          "command": "sfs.rename",
+          "when": "view == sshFolderSync && viewItem == sfs.history"
+        },
+        {
+          "command": "sfs.delete",
+          "when": "view == sshFolderSync && viewItem == sfs.history"
+        }
+      ]
+    },
+    "colors": [
+      {
+        "id": "sshFolderSync.same",
+        "description": "%sshFolderSync.same%",
+        "defaults": {
+          "light": "#388A34",
+          "dark": "#73C991",
+          "highContrast": "#73C991",
+          "highContrastLight": "#388A34"
+        }
+      },
+      {
+        "id": "sshFolderSync.different",
+        "description": "%sshFolderSync.different%",
+        "defaults": {
+          "light": "#D02020",
+          "dark": "#F48771",
+          "highContrast": "#F48771",
+          "highContrastLight": "#D02020"
+        }
+      },
+      {
+        "id": "sshFolderSync.localOnly",
+        "description": "%sshFolderSync.localOnly%",
+        "defaults": {
+          "light": "#1769AA",
+          "dark": "#75BEFF",
+          "highContrast": "#75BEFF",
+          "highContrastLight": "#1769AA"
+        }
+      },
+      {
+        "id": "sshFolderSync.remoteOnly",
+        "description": "%sshFolderSync.remoteOnly%",
+        "defaults": {
+          "light": "#AD6500",
+          "dark": "#ECAF66",
+          "highContrast": "#ECAF66",
+          "highContrastLight": "#AD6500"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "test": "node --test test.js",
+    "check": "node --check extension.js && node --check core.js && node --check history.js && node --check i18n.js && node --check ssh-config.js",
+    "package": "npx --yes @vscode/vsce package --no-dependencies"
+  },
+  "license": "MIT",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ssh",
+    "sync",
+    "sftp",
+    "compare",
+    "md5"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  }
+}
