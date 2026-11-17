@@ -3,7 +3,7 @@
   "displayName": "SSH Folder Sync",
   "description": "%description%",
   "version": "0.3.0",
-  "publisher": "local-tools",
+  "publisher": "Sware",
   "engines": {
     "vscode": "^1.85.0"
   },
