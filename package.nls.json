@@ -24,5 +24,9 @@
   "sfs.close.short": "Close",
   "sfs.edit.short": "Edit",
   "sfs.rename.short": "Rename",
-  "sfs.delete.short": "Delete"
+  "sfs.delete.short": "Delete",
+  "sfs.diagnose": "SSH Sync: Check SSH Connection",
+  "sfs.diagnose.short": "Check SSH Connection",
+  "sfs.setupKey": "SSH Sync: Set Up SSH Key Login",
+  "sfs.setupKey.short": "Set Up SSH Key Login"
 }

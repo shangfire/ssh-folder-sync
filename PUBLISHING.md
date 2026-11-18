@@ -43,9 +43,9 @@ Kiro and other editor forks may use a different extension registry. A VS Marketp
 
 ## 中文提示
 
-先将本目录作为仓库根目录上传 GitHub。package.json 的 publisher 已设置为 Sware；发布前填写真实 repository/homepage/bugs 地址。更换 publisher 后扩展标识、全局存储位置会变化。
+先将本目录作为仓库根目录上传 GitHub。package.json 的 publisher 已设置为 Sware；repository/homepage/bugs 已设置为 shangfire/ssh-folder-sync。更换 publisher 后扩展标识、全局存储位置会变化。
 
-执行检查、测试和打包命令，先安装 VSIX 做真实 SSH 验证，再手动上传市场。本仓库不会自动发布，也不包含发布凭据。当前环境未完成 VSIX 打包或市场上传。
+执行检查、测试和打包命令，先安装 VSIX 做真实 SSH 验证，再手动上传市场。本仓库不会自动发布，也不包含发布凭据。本地已生成 VSIX；本项目不会代替用户执行市场上传。
 
 
 ## Kiro / Open VSX
@@ -63,7 +63,7 @@ The same VSIX can be published to both registries. No separate Kiro build is req
 ```powershell
 # Set OVSX_PAT privately in this terminal; do not commit or share the token.
 npx.cmd --yes ovsx create-namespace Sware
-npx.cmd --yes ovsx publish ..\ssh-folder-sync-0.3.0.vsix
+npx.cmd --yes ovsx publish ..\ssh-folder-sync-0.5.1.vsix
 ```
 
 Skip namespace creation if it already exists and your account has access. The CLI reads `OVSX_PAT` from the environment. If the namespace belongs to another account, resolve access before publishing; do not silently change publisher identity.

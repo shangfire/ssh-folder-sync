@@ -2,12 +2,12 @@
   "name": "ssh-folder-sync",
   "displayName": "SSH Folder Sync",
   "description": "%description%",
-  "version": "0.3.3",
+  "version": "0.5.2",
   "publisher": "Sware",
   "engines": {
     "vscode": "^1.85.0"
   },
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "activationEvents": [
     "onView:sshFolderSync"
   ],
@@ -64,6 +64,16 @@
         "command": "sfs.delete",
         "title": "%sfs.delete%",
         "shortTitle": "%sfs.delete.short%"
+      },
+      {
+        "command": "sfs.diagnose",
+        "title": "%sfs.diagnose%",
+        "shortTitle": "%sfs.diagnose.short%"
+      },
+      {
+        "command": "sfs.setupKey",
+        "title": "%sfs.setupKey%",
+        "shortTitle": "%sfs.setupKey.short%"
       }
     ],
     "views": {
@@ -100,6 +110,16 @@
           "command": "sfs.close",
           "when": "view == sshFolderSync && sfs.active",
           "group": "navigation@2"
+        },
+        {
+          "command": "sfs.diagnose",
+          "when": "view == sshFolderSync",
+          "group": "ssh"
+        },
+        {
+          "command": "sfs.setupKey",
+          "when": "view == sshFolderSync",
+          "group": "ssh"
         }
       ],
       "view/item/context": [
@@ -118,6 +138,16 @@
         {
           "command": "sfs.delete",
           "when": "view == sshFolderSync && viewItem == sfs.history"
+        },
+        {
+          "command": "sfs.diagnose",
+          "when": "view == sshFolderSync && viewItem == sfs.history",
+          "group": "ssh"
+        },
+        {
+          "command": "sfs.setupKey",
+          "when": "view == sshFolderSync && viewItem == sfs.history",
+          "group": "ssh"
         }
       ]
     },
@@ -166,8 +196,9 @@
   },
   "scripts": {
     "test": "node --test test.js",
-    "check": "node --check extension.js && node --check core.js && node --check history.js && node --check i18n.js && node --check ssh-config.js && node --check remote-path.js",
-    "package": "npx --yes @vscode/vsce package --no-dependencies"
+    "check": "node --check src/extension.js && node --check src/core.js && node --check src/history.js && node --check src/i18n.js && node --check src/ssh-config.js && node --check src/remote-path.js && node --check src/ssh-guide.js",
+    "package": "npx --yes @vscode/vsce package --no-dependencies",
+    "format": "npx prettier --write \"src/*.js\" test.js package.json"
   },
   "license": "MIT",
   "categories": [
