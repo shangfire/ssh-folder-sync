@@ -8,8 +8,8 @@ Visually compare and copy files between a directory on the extension host and a 
 
 - VS Code 1.85 or later; desktop extension host (not browser-only).
 - OpenSSH `ssh` available on the extension host's PATH.
-- Python 3 available as `python3` on the SSH target. The current target implementation requires a POSIX-style filesystem.
-- Key-based authentication or an SSH agent. Interactive password and keyboard-interactive authentication are not supported.
+- Python 3 on the SSH target, using the per-connection command `python3`, `python`, or `py -3`. Linux/POSIX paths and Windows drive-letter paths are supported.
+- Key-based authentication or an SSH agent for browsing and copying. The key-setup wizard uses an interactive terminal only for the initial login; browsing/copying never prompt for passwords.
 
 Before starting, connect from the extension host's terminal with `ssh your-host` to verify the server fingerprint and configure authentication. Confirm `ssh -T -o BatchMode=yes your-host "python3 --version"` succeeds.
 
@@ -62,7 +62,7 @@ History is stored in `connections.json` under VS Code's extension global-storage
 - **Nothing to sync:** checked source files already match, or all differing items are excluded. The operation ends immediately; the notification need not be dismissed.
 - **Remote root is not a directory:** confirm the path exists and the SSH user can access it. Use the directory browser or an absolute path without shell quotes.
 - **Authentication fails:** run the BatchMode SSH command above from the same machine where the extension runs.
-- **Slow comparison:** full scans include excluded directories; MD5 reads every file's content. The current implementation is serial.
+- **Slow comparison:** directory traversal includes excluded directories; MD5 reuses persistent metadata-validated hashes for unchanged files. The current implementation is serial.
 - **Missing colors:** enable file-decoration colors/badges in the editor settings.
 - **Other failures:** inspect Output → **SSH Folder Sync** for the loaded extension path and operation/error logs. Redact hostnames and paths before sharing logs publicly.
 
@@ -81,3 +81,11 @@ npm run package
 ```
 
 See [PUBLISHING.md](PUBLISHING.md) for release preparation and [CHANGELOG.md](CHANGELOG.md) for changes. Licensed under [MIT](LICENSE).
+
+### Source layout and MD5 cache
+
+Runtime sources live in src/. English text is the source language; Chinese UI translations are in src/i18n.js. MD5 snapshots are stored per endpoint pair under the extension global storage md5-cache directory. Files with unchanged size, high-resolution mtime, ctime and file identity reuse their hashes. Changed/new files are hashed; deleted entries disappear on the next successful scan. Directory traversal and metadata requests are still required. Metadata caching cannot detect content changes that preserve every checked metadata field. Delete the relevant cache file to force a full rehash.
+
+### SSH setup assistance
+
+Use **Check SSH Connection** or **Set Up SSH Key Login** from the history context menu or view menu. See the [SSH setup guide](SSH-GUIDE.md) for the terminal-based first login, default server paths, key handling and limitations.

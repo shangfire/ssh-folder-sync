@@ -24,5 +24,9 @@
   "sfs.close.short": "关闭",
   "sfs.edit.short": "编辑",
   "sfs.rename.short": "重命名",
-  "sfs.delete.short": "删除"
+  "sfs.delete.short": "删除",
+  "sfs.diagnose": "SSH Sync: 检查 SSH 连接",
+  "sfs.diagnose.short": "检查 SSH 连接",
+  "sfs.setupKey": "SSH Sync: 配置 SSH 免密登录",
+  "sfs.setupKey.short": "配置 SSH 免密登录"
 }
