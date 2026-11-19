@@ -4,7 +4,7 @@
 
 Use **Check SSH Connection** from a connection's context menu or the view menu. Without an active connection, choose a saved connection. Detailed results are in Output → SSH Folder Sync.
 
-Checks identify the extension host/user, resolve the SSH target/user/port, test non-interactive authentication, try Python 3 commands, and check directory read/traversal access. Write access is not guaranteed by this check. A working Python command can be saved after confirmation.
+Checks identify the extension host/user, resolve the SSH target/user/port, test non-interactive authentication, try Python 3.7+ commands, and check directory read/traversal access. Write access is not guaranteed by this check. A working Python command can be saved after confirmation.
 
 ## First-time key login
 
@@ -27,3 +27,6 @@ Private keys stay on the origin host. Key generation may leave an unused key if 
 - No public key: generate one in the wizard or use ssh-keygen. The SSH config, keys and agent belong to the extension host user, not necessarily your desktop user.
 
 The wizard's remote installation has not yet been validated against a live Windows/Linux server in automated tests. Test with a non-production account first. Logs include host/user/path information; sanitize before sharing.
+
+
+Diagnostic and key-installation SSH processes are independent of the normal persistent sync session. They do not borrow an existing Remote SSH editor connection. See [session lifecycle](README.md#ssh-session-lifecycle).

@@ -2,7 +2,7 @@
   "name": "ssh-folder-sync",
   "displayName": "SSH Folder Sync",
   "description": "%description%",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "publisher": "Sware",
   "engines": {
     "vscode": "^1.85.0"
@@ -196,7 +196,7 @@
   },
   "scripts": {
     "test": "node --test test.js",
-    "check": "node --check src/extension.js && node --check src/core.js && node --check src/history.js && node --check src/i18n.js && node --check src/ssh-config.js && node --check src/remote-path.js && node --check src/ssh-guide.js",
+    "check": "node --check src/extension.js && node --check src/core.js && node --check src/history.js && node --check src/i18n.js && node --check src/ssh-config.js && node --check src/remote-path.js && node --check src/ssh-guide.js && node --check src/browse-session.js && node --check src/directory-picker.js && node --check src/ssh-session.js",
     "package": "npx --yes @vscode/vsce package --no-dependencies",
     "format": "npx prettier --write \"src/*.js\" test.js package.json"
   },

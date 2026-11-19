@@ -3,7 +3,6 @@ const vscode = require("vscode"),
   fs = require("node:fs/promises"),
   path = require("node:path"),
   os = require("node:os"),
-  { spawn } = require("node:child_process"),
   { excluded, status, scan, summarize, planSync } = require("./core");
 async function activate(ctx) {
   const output = vscode.window.createOutputChannel("SSH Folder Sync");
@@ -74,7 +73,15 @@ async function activate(ctx) {
     vscode.commands.executeCommand("setContext", "sfs.active", !!cfg);
     changed.fire();
   }
+  let activeSession, activeSessionKey;
+  function releaseSession() {
+    activeSession?.dispose();
+    activeSession = undefined;
+    activeSessionKey = undefined;
+  }
+  ctx.subscriptions.push({ dispose: releaseSession });
   async function open(record) {
+    releaseSession();
     cfg = record;
     ign = [...(record.excluded || [])];
     local = {};
@@ -221,54 +228,49 @@ async function activate(ctx) {
   async function rpc(op, extra = {}, connection = cfg) {
     check();
     report("SSH: " + op + (extra.path ? " " + extra.path : ""));
-    const script = await fs.readFile(path.join(__dirname, "remote.py"), "utf8");
-    const encoded = Buffer.from(script).toString("base64");
-    return new Promise((resolve, reject) => {
-      const child = spawn(
-        "ssh",
-        [
-          "-T",
-          "-o",
-          "BatchMode=yes",
-          "-o",
-          "ConnectTimeout=15",
-          "--",
-          connection.host,
-          `${connection.pythonCommand || (connection.remote && /^[A-Za-z]:[\\/]/.test(connection.remote) ? "python" : "python3")} -c "import base64;exec(base64.b64decode('${encoded}'))"`,
-        ],
-        { windowsHide: true },
+    const pythonCommand =
+      connection.pythonCommand ||
+      (/^[A-Za-z]:[\\/]/.test(connection.remote) ? "python" : "python3");
+    const key = JSON.stringify([
+      connection.host,
+      pythonCommand,
+      connection.remote,
+    ]);
+    if (activeSessionKey !== key || !activeSession?.isAlive) {
+      releaseSession();
+      const operations = await fs.readFile(
+        path.join(__dirname, "remote.py"),
+        "utf8",
       );
-      const cancel = operation?.token.onCancellationRequested(() => {
-        child.kill();
-        reject(new vscode.CancellationError());
-      });
-      let out = [],
-        err = [];
-      child.stdout.on("data", (d) => out.push(d));
-      child.stderr.on("data", (d) => err.push(d));
-      child.on("error", reject);
-      child.stdin.on("error", () => {});
-      const timer = setTimeout(() => child.kill(), 120000);
-      child.on("close", (code) => {
-        clearTimeout(timer);
-        cancel?.dispose();
-        if (code !== 0)
-          return reject(
-            new Error(
-              Buffer.concat(err).toString() ||
-                t("SSH timed out or connection closed"),
-            ),
-          );
-        try {
-          resolve(JSON.parse(Buffer.concat(out).toString()));
-        } catch (e) {
-          reject(e);
-        }
-      });
-      child.stdin.end(
-        JSON.stringify({ root: connection.remote, mode: "md5", op, ...extra }),
+      const wrapper = (
+        await fs.readFile(path.join(__dirname, "rpc-server.py"), "utf8")
+      ).replace("SCRIPT_BASE64", Buffer.from(operations).toString("base64"));
+      check();
+      activeSession = await require("./ssh-session").createJsonSession(
+        { host: connection.host, pythonCommand },
+        wrapper,
       );
+      activeSessionKey = key;
+    }
+    const session = activeSession;
+    const cancellation = operation?.token.onCancellationRequested(() => {
+      if (activeSession === session) releaseSession();
     });
+    try {
+      check();
+      return await session.request({
+        root: connection.remote,
+        mode: "md5",
+        op,
+        ...extra,
+      });
+    } catch (error) {
+      if (activeSession === session) releaseSession();
+      check();
+      throw error;
+    } finally {
+      cancellation?.dispose();
+    }
   }
   async function refresh() {
     const cacheKey = require("node:crypto")
@@ -486,60 +488,23 @@ async function activate(ctx) {
   }
 
   async function browse(host, initial, pythonCommand) {
-    let current = initial || "~";
-    while (true) {
-      check();
-      const result = await rpc(
-        "browse",
-        {},
-        { host, remote: current, pythonCommand },
+    const session = await require("./browse-session").createBrowseSession(
+      { host, pythonCommand },
+      operation?.token,
+    );
+    ctx.subscriptions.push(session);
+    try {
+      return await require("./directory-picker").pickRemoteDirectory(
+        vscode,
+        session,
+        host,
+        initial,
+        t,
       );
-      current = result.path;
-      const selected = await vscode.window.showQuickPick(
-        [
-          { label: "$(check) " + t("Select this directory"), action: "select" },
-          {
-            label: "$(arrow-up) ..",
-            path: remotePathApi(current).dirname(current),
-          },
-          { label: "$(edit) " + t("Enter a path…"), action: "manual" },
-          ...((result.drives || []).length
-            ? [
-                {
-                  label: "$(database) " + t("Choose a drive…"),
-                  action: "drives",
-                },
-              ]
-            : []),
-          ...result.directories.map((name) => ({
-            label: "$(folder) " + name,
-            path: remotePathApi(current).join(current, name),
-          })),
-        ],
-        {
-          title: host + ":" + current,
-          placeHolder: t("Open a subdirectory or select the current directory"),
-        },
-      );
-      if (!selected) return;
-      if (selected.action === "select") return current;
-      if (selected.action === "drives") {
-        const drive = await vscode.window.showQuickPick(result.drives, {
-          placeHolder: t("Choose a drive…"),
-        });
-        if (drive) current = drive;
-        continue;
-      }
-      if (selected.action === "manual") {
-        const value = await vscode.window.showInputBox({
-          prompt: t("Absolute remote directory"),
-          value: current,
-          placeHolder: remotePathPlaceholder(current),
-          validateInput: (s) =>
-            absoluteRemotePath(s) ? null : t("An absolute path is required"),
-        });
-        if (value) current = value;
-      } else current = selected.path;
+    } finally {
+      session.dispose();
+      const index = ctx.subscriptions.indexOf(session);
+      if (index >= 0) ctx.subscriptions.splice(index, 1);
     }
   }
   function localPathExample() {
@@ -723,6 +688,7 @@ async function activate(ctx) {
     await persist();
     if (previous || manual) {
       if (cfg?.id === record.id) {
+        releaseSession();
         cfg = record;
         ign = [...record.excluded];
         local = {};
@@ -771,6 +737,7 @@ async function activate(ctx) {
   });
   let closeRequested = false;
   function close() {
+    releaseSession();
     cfg = undefined;
     ign = [];
     local = {};

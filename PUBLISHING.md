@@ -29,9 +29,11 @@ npm test
 npm run package
 ```
 
-The package script runs `npx @vscode/vsce package --no-dependencies`, which downloads the official packager if absent and creates a VSIX. Inspect `npx @vscode/vsce ls --no-dependencies` to confirm runtime JS, remote.py, package.nls*.json, README, CHANGELOG, and LICENSE are included, with test/development files excluded.
+The package script runs `npx @vscode/vsce package --no-dependencies`, which downloads the official packager if absent and creates a VSIX. Inspect `npx @vscode/vsce ls --no-dependencies` to confirm src/*.js, src/*.py (including rpc-server.py and browse-server.py), package.nls*.json, both READMEs, SSH guides, compatibility notes, CHANGELOG, and LICENSE are included, with test/development files excluded.
 
 Install the VSIX into a clean VS Code profile and smoke-test with a disposable SSH target: both directions, equal-MD5 skip, folder exclusion, missing directory creation, text diff, cancellation, offline save, history return, and an empty sync with the notification still visible. Also check Chinese/English, local and Remote SSH environments. This repository has core automated tests; a complete clean-install/live-server release check remains necessary.
+
+The default package command writes `ssh-folder-sync-0.6.0.vsix` into the project root. If using an artifact built with an explicit --out path, substitute its actual location. On Windows PowerShell, use npm.cmd/npx.cmd if execution policy blocks npm.ps1.
 
 ## Publish
 
@@ -63,13 +65,17 @@ The same VSIX can be published to both registries. No separate Kiro build is req
 ```powershell
 # Set OVSX_PAT privately in this terminal; do not commit or share the token.
 npx.cmd --yes ovsx create-namespace Sware
-npx.cmd --yes ovsx publish ..\ssh-folder-sync-0.5.1.vsix
+npx.cmd --yes ovsx publish .\ssh-folder-sync-0.6.0.vsix
 ```
 
-Skip namespace creation if it already exists and your account has access. The CLI reads `OVSX_PAT` from the environment. If the namespace belongs to another account, resolve access before publishing; do not silently change publisher identity.
+For the existing Sware namespace, skip creation and publish directly using an authorized account. The CLI reads `OVSX_PAT` from the environment. If the namespace belongs to another account, resolve access before publishing; do not silently change publisher identity.
 
 After publishing, verify the listing and install through Kiro's extension search. The existing local VSIX can also be installed directly in Kiro for testing.
 
 Official guide: https://github.com/eclipse-openvsx/openvsx/wiki/Publishing-Extensions
 
 中文：Kiro 默认使用 Open VSX，需独立注册并取得 Sware 命名空间权限；VS Code 市场的发布者身份不会自动同步。可以复用当前 VSIX，无需单独构建。先完成账户协议、配置私密 OVSX_PAT 环境变量，再执行上述命令。不要把 token 写入仓库或聊天。
+
+## 0.6.0 release verification
+
+Confirm the package version/publisher/repository, local/remote endpoint labels, both copy directions, unchanged-MD5 skips, reconnect after closing, multiple operations over one sync session, remote picker navigation without window recreation, and SSH setup instructions. The local automated run has 18 passing tests and one POSIX installer test skipped due to the MSYS sandbox restriction. Live cross-platform SSH transfer certification is still pending. Do not treat simulated transport tests as full integration tests.

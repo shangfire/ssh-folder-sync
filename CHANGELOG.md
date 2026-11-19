@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.6.0
+
+- Reuse one SSH/Python session for active-connection scans, diff reads and file transfers.
+- Release sessions on close, switch, cancellation and failures; do not replay writes.
+- Stream initialization over stdin to avoid Windows command-line length limits and enable UTF-8 protocol I/O.
+
+## 0.5.6
+
+- Keep one remote directory picker open while navigating directories and switching drives.
+- Update its list and busy indicator in place instead of recreating the picker.
+
+## 0.5.5
+
+- Remove temporary decoration diagnostics without changing state colors.
+- Reuse one SSH/Python process per remote directory picker session; no directory cache.
+- Dispose browsing sessions on selection, cancellation, timeout and extension shutdown.
+
+## 0.5.4
+
+- Complete URI and decoration callback diagnostics.
+
+## 0.5.3
+
+- Add bounded decoration diagnostics for remote tree rendering, callback activity, theme settings and color contributions.
+
+## 0.5.2
+
+- Add manual local directory entry, optional browsing and OS-aware path examples.
+
 ## 0.5.1
 
 - Permit explicitly continuing key setup when existing authentication works.
@@ -19,6 +48,14 @@
 - Use English source messages with Chinese translations.
 - Persist per-connection local and remote MD5 caches, validated by size, high-resolution timestamps and file identity.
 - Detect file changes during hashing and discard stale deleted entries after successful scans.
+
+## 0.3.3
+
+- Add Windows drive selection.
+
+## 0.3.2
+
+- Select Python commands per connection.
 
 ## 0.3.1
 

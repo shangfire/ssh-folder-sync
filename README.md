@@ -8,7 +8,7 @@ Visually compare and copy files between a directory on the extension host and a 
 
 - VS Code 1.85 or later; desktop extension host (not browser-only).
 - OpenSSH `ssh` available on the extension host's PATH.
-- Python 3 on the SSH target, using the per-connection command `python3`, `python`, or `py -3`. Linux/POSIX paths and Windows drive-letter paths are supported.
+- Python 3.7+ on the SSH target, using the per-connection command `python3`, `python`, or `py -3`. Linux/POSIX paths and Windows drive-letter paths are supported.
 - Key-based authentication or an SSH agent for browsing and copying. The key-setup wizard uses an interactive terminal only for the initial login; browsing/copying never prompt for passwords.
 
 Before starting, connect from the extension host's terminal with `ssh your-host` to verify the server fingerprint and configure authentication. Confirm `ssh -T -o BatchMode=yes your-host "python3 --version"` succeeds.
@@ -18,7 +18,7 @@ Before starting, connect from the extension host's terminal with `ssh your-host`
 1. Open Explorer → **SSH Folder Sync** → **New Connection**.
 2. Enter a connection name, then type the local sync directory as an absolute path. The prompt identifies the extension host; choose Browse only if you want the system folder picker.
 3. Choose a Host alias read from `~/.ssh/config`, or enter an alias manually. Explicit Host names and common Include files are supported; wildcard Host patterns are not selectable entries. Custom Remote SSH configuration-file settings are not read.
-4. Choose **Browse remote directories** to connect and navigate from the remote home directory. Enter folders, go up with `..`, and choose **Select this directory**. Alternatively, choose **Enter path (offline)** and provide an absolute path.
+4. Select the Python command available on the target (`python3`, `python`, or `py -3`). Then choose **Browse remote directories** to connect and navigate from the remote home directory. Enter folders, go up with `..`, and choose **Select this directory**. Alternatively, choose **Enter path (offline)** and provide an absolute path.
 5. Opening a saved connection scans both complete directory trees. Offline saves defer validation until you open or refresh the connection.
 
 ### Compare and choose items
@@ -45,7 +45,7 @@ Use the view's `…` menu:
 2. **Remote → Local** copies checked differences to the extension host.
 3. **New Connection** creates another directory pairing.
 
-Before copying, both sides are scanned again using MD5. Identical files and existing directories are skipped. The confirmation shows the source and destination host/path and item count, including missing directories that must be created. Existing destination files are overwritten. Files absent from the source are **not deleted** from the destination. Direction is explicit; the extension does not decide which version is newer.
+Before copying, both sides are scanned again, reusing validated MD5 cache entries and hashing changed/new files. Identical files and existing directories are skipped. The confirmation shows the source and destination host/path and item count, including missing directories that must be created. Existing destination files are overwritten. Files absent from the source are **not deleted** from the destination. Direction is explicit; the extension does not decide which version is newer.
 
 Progress shows scan and copy stages. Cancel stops further work when possible; completed copies are not rolled back, and cancellation is not an atomic transaction. Avoid changing files from other programs during comparison/copying.
 
@@ -89,3 +89,12 @@ Runtime sources live in src/. English text is the source language; Chinese UI tr
 ### SSH setup assistance
 
 Use **Check SSH Connection** or **Set Up SSH Key Login** from the history context menu or view menu. See the [SSH setup guide](SSH-GUIDE.md) for the terminal-based first login, default server paths, key handling and limitations.
+
+
+### SSH session lifecycle
+
+Opening a saved connection establishes one persistent SSH/Python session during the initial scan. Subsequent refreshes, diff reads, directory creation, uploads and downloads reuse it. Requests are serial. Closing or switching the connection, editing its active configuration, cancelling an SSH request, or encountering an SSH/request failure invalidates the session. A subsequent operation creates a new session; failed writes are never automatically replayed. Keepalives detect unresponsive transports. Request timeouts remain 120 seconds.
+
+The remote directory picker uses its own temporary persistent session and keeps one selection window open, updating the list and loading indicator in place. Entering folders, returning to parents, switching Windows drives and manual path entry reuse that window/session. No directory-list cache is used. Selecting a directory or cancelling disposes the picker session. SSH diagnostics and key setup use separate probes/terminal connections.
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for platform prerequisites and validation limits.

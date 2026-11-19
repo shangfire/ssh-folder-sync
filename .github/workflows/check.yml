@@ -18,4 +18,4 @@ jobs:
           python-version: '3.x'
       - run: npm run check
       - run: npm test
-      - run: python -c "import ast,pathlib; ast.parse(pathlib.Path('src/remote.py').read_text(encoding='utf-8-sig'))"
+      - run: python -c "import ast,pathlib; [ast.parse(p.read_text(encoding='utf-8-sig')) for p in pathlib.Path('src').glob('*.py')]"

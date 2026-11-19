@@ -345,3 +345,184 @@ test("POSIX public-key installer executes twice without duplicating keys", async
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test("Directory browsing reuses one SSH process without caching and survives directory errors", async () => {
+  const { createBrowseSession } = require("./src/browse-session");
+  const { PassThrough, Writable } = require("node:stream");
+  const { EventEmitter } = require("node:events");
+  let starts = 0,
+    requests = 0,
+    kills = 0;
+  const session = await createBrowseSession(
+    { host: "fixture", pythonCommand: "python" },
+    undefined,
+    () => {
+      starts++;
+      const child = new EventEmitter();
+      child.stdout = new PassThrough();
+      child.stderr = new PassThrough();
+      child.kill = () => {
+        kills++;
+        child.emit("close", 0);
+      };
+      child.stdin = new Writable({
+        write(chunk, encoding, callback) {
+          if (!chunk.toString().trimStart().startsWith("{")) {
+            callback();
+            return;
+          }
+          const request = JSON.parse(chunk.toString());
+          requests++;
+          process.nextTick(() =>
+            child.stdout.write(
+              JSON.stringify(
+                request.directory === "bad"
+                  ? { error: "Permission denied" }
+                  : {
+                      result: {
+                        path: request.directory,
+                        directories: [],
+                        drives: [],
+                      },
+                    },
+              ) + "\n",
+            ),
+          );
+          callback();
+        },
+      });
+      return child;
+    },
+  );
+  try {
+    assert.equal((await session.request("/one")).path, "/one");
+    await assert.rejects(session.request("bad"), /Permission denied/);
+    assert.equal((await session.request("/two")).path, "/two");
+    assert.equal((await session.request("/one")).path, "/one");
+    assert.equal(starts, 1);
+    assert.equal(requests, 4);
+  } finally {
+    session.dispose();
+  }
+  assert.equal(kills, 1);
+  await assert.rejects(session.request("/other"), /disposed|closed/);
+});
+
+test("Remote directory navigation keeps one picker open and refreshes its items", async () => {
+  const { pickRemoteDirectory } = require("./src/directory-picker");
+  let created = 0,
+    shown = 0,
+    disposed = 0;
+  const listeners = {};
+  const picker = {
+    value: "",
+    items: [],
+    selectedItems: [],
+    onDidHide(fn) {
+      listeners.hide = fn;
+    },
+    onDidChangeValue(fn) {
+      listeners.change = fn;
+    },
+    onDidAccept(fn) {
+      listeners.accept = fn;
+    },
+    show() {
+      shown++;
+    },
+    dispose() {
+      disposed++;
+    },
+  };
+  const paths = [];
+  const session = {
+    async request(p) {
+      paths.push(p);
+      return {
+        path: p === "~" ? "/home" : p,
+        directories: p === "~" ? ["child"] : [],
+        drives: [],
+      };
+    },
+  };
+  const result = pickRemoteDirectory(
+    {
+      window: {
+        createQuickPick() {
+          created++;
+          return picker;
+        },
+      },
+    },
+    session,
+    "fixture",
+    "~",
+    (x) => x,
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+  picker.selectedItems = [
+    picker.items.find((item) => item.path === "/home/child"),
+  ];
+  listeners.accept();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(picker.title, "fixture:/home/child");
+  assert.equal(created, 1);
+  assert.equal(shown, 1);
+  assert.equal(disposed, 0);
+  assert.deepEqual(paths, ["~", "/home/child"]);
+  picker.selectedItems = [
+    picker.items.find((item) => item.action === "select"),
+  ];
+  listeners.accept();
+  assert.equal(await result, "/home/child");
+  assert.equal(disposed, 1);
+});
+
+test("General SSH session reuses one process for scan, read and write requests", async () => {
+  const { createJsonSession } = require("./src/ssh-session"),
+    { PassThrough, Writable } = require("node:stream"),
+    { EventEmitter } = require("node:events");
+  let calls = 0,
+    bootstrap = 0;
+  const operations = [];
+  const session = await createJsonSession(
+    { host: "fixture", pythonCommand: "python" },
+    'print("fixture")',
+    undefined,
+    () => {
+      calls++;
+      const child = new EventEmitter();
+      child.stdout = new PassThrough();
+      child.stderr = new PassThrough();
+      child.kill = () => child.emit("close", 0);
+      child.stdin = new Writable({
+        write(chunk, encoding, callback) {
+          const text = chunk.toString();
+          if (!text.startsWith("{")) {
+            bootstrap++;
+            callback();
+            return;
+          }
+          const payload = JSON.parse(text);
+          operations.push(payload.op);
+          process.nextTick(() =>
+            child.stdout.write(JSON.stringify({ result: payload }) + "\n"),
+          );
+          callback();
+        },
+      });
+      return child;
+    },
+  );
+  try {
+    for (const op of ["scan", "read", "write", "scan"])
+      assert.equal((await session.request({ op, path: "目录/文件" })).op, op);
+    assert.equal(calls, 1);
+    assert.equal(bootstrap, 1);
+    assert.deepEqual(operations, ["scan", "read", "write", "scan"]);
+    assert.ok(session.isAlive);
+  } finally {
+    session.dispose();
+  }
+  assert.ok(!session.isAlive);
+});

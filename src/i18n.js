@@ -139,6 +139,7 @@ Object.assign(zh, {
   "Linux: /home/name/project; Windows: C:\\Users\\name\\project":
     "Linux：/home/name/project；Windows：C:\\Users\\name\\project",
 });
+Object.assign(zh, { Back: "返回" });
 function translator(language) {
   return (text, ...args) => {
     const template = language.toLowerCase().startsWith("zh")
