@@ -190,6 +190,7 @@ test("历史列表渲染使用翻译函数且不受局部变量遮蔽", () => {
     "(function(p)" + code.slice(start, end).trim().replace(/,$/, "") + ")",
     {
       cfg: undefined,
+      expandedHistoryActions: new Set(),
       history: [
         {
           id: "one",
@@ -368,6 +369,7 @@ test("Directory browsing reuses one SSH process without caching and survives dir
       child.stdin = new Writable({
         write(chunk, encoding, callback) {
           if (!chunk.toString().trimStart().startsWith("{")) {
+            process.nextTick(() => child.stdout.write("__SFS_READY__\n"));
             callback();
             return;
           }
@@ -405,7 +407,7 @@ test("Directory browsing reuses one SSH process without caching and survives dir
     session.dispose();
   }
   assert.equal(kills, 1);
-  await assert.rejects(session.request("/other"), /disposed|closed/);
+  await assert.rejects(session.request("/other"), /disposed|closed|exited/);
 });
 
 test("Remote directory navigation keeps one picker open and refreshes its items", async () => {
@@ -500,6 +502,7 @@ test("General SSH session reuses one process for scan, read and write requests",
           const text = chunk.toString();
           if (!text.startsWith("{")) {
             bootstrap++;
+            process.nextTick(() => child.stdout.write("__SFS_READY__\n"));
             callback();
             return;
           }
@@ -525,4 +528,154 @@ test("General SSH session reuses one process for scan, read and write requests",
     session.dispose();
   }
   assert.ok(!session.isAlive);
+});
+
+test("SSH setup terminal settles on task-only cancellation and early completion", async () => {
+  const { terminalTask } = require("./src/ssh-guide");
+  for (const early of [false, true]) {
+    const handlers = {};
+    let disposed = 0;
+    const vscode = {
+      Task: class {},
+      TaskScope: { Global: 1 },
+      ProcessExecution: class {},
+      TaskRevealKind: { Always: 1 },
+      TaskPanelKind: { Dedicated: 1 },
+      ProgressLocation: { Notification: 1 },
+      window: {
+        withProgress(options, fn) {
+          return fn(
+            {},
+            {
+              onCancellationRequested() {
+                return {
+                  dispose() {
+                    disposed++;
+                  },
+                };
+              },
+            },
+          );
+        },
+      },
+      tasks: {
+        onDidEndTaskProcess(fn) {
+          handlers.process = fn;
+          return {
+            dispose() {
+              disposed++;
+            },
+          };
+        },
+        onDidEndTask(fn) {
+          handlers.task = fn;
+          return {
+            dispose() {
+              disposed++;
+            },
+          };
+        },
+        async executeTask(task) {
+          const execution = { task };
+          if (early) handlers.task({ execution });
+          else setImmediate(() => handlers.task({ execution }));
+          return execution;
+        },
+      },
+    };
+    const value = await terminalTask(vscode, "fixture", "ssh", []);
+    assert.equal(value, undefined);
+    assert.equal(disposed, 3);
+  }
+});
+test("SSH setup terminal Cancel terminates the task without waiting for exit events", async () => {
+  const { terminalTask } = require("./src/ssh-guide");
+  let cancel,
+    terminated = 0;
+  class CancellationError extends Error {}
+  const vscode = {
+    CancellationError,
+    Task: class {},
+    TaskScope: { Global: 1 },
+    ProcessExecution: class {},
+    TaskRevealKind: { Always: 1 },
+    TaskPanelKind: { Dedicated: 1 },
+    ProgressLocation: { Notification: 1 },
+    window: {
+      withProgress(options, fn) {
+        return fn(
+          {},
+          {
+            onCancellationRequested(fn) {
+              cancel = fn;
+              return { dispose() {} };
+            },
+          },
+        );
+      },
+    },
+    tasks: {
+      onDidEndTaskProcess() {
+        return { dispose() {} };
+      },
+      onDidEndTask() {
+        return { dispose() {} };
+      },
+      async executeTask(task) {
+        setImmediate(() => cancel());
+        return {
+          task,
+          terminate() {
+            terminated++;
+          },
+        };
+      },
+    },
+  };
+  await assert.rejects(
+    terminalTask(vscode, "fixture", "ssh", []),
+    CancellationError,
+  );
+  assert.equal(terminated, 1);
+});
+
+test("SSH startup EOF reports remote stderr and sends no operation before readiness", async () => {
+  const { createJsonSession } = require("./src/ssh-session"),
+    { PassThrough, Writable } = require("node:stream"),
+    { EventEmitter } = require("node:events");
+  let writes = 0;
+  const session = await createJsonSession(
+    { host: "fixture", pythonCommand: "python3" },
+    "pass",
+    undefined,
+    () => {
+      const child = new EventEmitter();
+      child.stdout = new PassThrough();
+      child.stderr = new PassThrough();
+      child.kill = () => {};
+      child.stdin = new Writable({
+        write(chunk, encoding, callback) {
+          writes++;
+          callback();
+          setImmediate(() => {
+            const error = Error("write EOF");
+            error.code = "EOF";
+            child.stdin.emit("error", error);
+            child.stderr.write("python3: command not found");
+            child.emit("close", 127);
+          });
+        },
+      });
+      return child;
+    },
+  );
+  try {
+    await assert.rejects(
+      session.request({ op: "scan" }),
+      /code 127.*python3: command not found/,
+    );
+    assert.equal(writes, 1);
+  } finally {
+    session.dispose();
+  }
 });

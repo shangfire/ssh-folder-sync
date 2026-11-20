@@ -39,7 +39,7 @@ Uncheck a file or folder to exclude it from copying. Unchecking a folder exclude
 
 ### Copy files
 
-Use the view's `…` menu:
+Use the view toolbar icons (hover for the direction):
 
 1. **Local → Remote** copies checked differences to the SSH target.
 2. **Remote → Local** copies checked differences to the extension host.
@@ -88,7 +88,7 @@ Runtime sources live in src/. English text is the source language; Chinese UI tr
 
 ### SSH setup assistance
 
-Use **Check SSH Connection** or **Set Up SSH Key Login** from the history context menu or view menu. See the [SSH setup guide](SSH-GUIDE.md) for the terminal-based first login, default server paths, key handling and limitations.
+Right-click a specific history connection and choose **Check SSH Connection** or **Set Up SSH Key Login**. See the [SSH setup guide](SSH-GUIDE.md) for the terminal-based first login, default server paths, key handling and limitations.
 
 
 ### SSH session lifecycle
@@ -98,3 +98,6 @@ Opening a saved connection establishes one persistent SSH/Python session during 
 The remote directory picker uses its own temporary persistent session and keeps one selection window open, updating the list and loading indicator in place. Entering folders, returning to parents, switching Windows drives and manual path entry reuse that window/session. No directory-list cache is used. Selecting a directory or cancelling disposes the picker session. SSH diagnostics and key setup use separate probes/terminal connections.
 
 See [COMPATIBILITY.md](COMPATIBILITY.md) for platform prerequisites and validation limits.
+
+
+History uses the native tree view. Click a connection to open and compare. Each connection offers a Check icon and an ellipsis menu for key setup, editing, renaming and deletion; context menus remain available. Files present on both sides have a Diff icon and can be clicked to open a diff.

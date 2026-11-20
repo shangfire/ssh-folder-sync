@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.8.0
+
+- Revert connection management to the native tree and remove the webview implementation.
+- Keep Check and More row actions; put key setup, edit, rename and delete in More.
+- Preserve persistent SSH sessions, MD5 caches and inline file diffs.
+
+## 0.7.2
+
+- Stop returning legacy history items from the comparison tree.
+- Explicitly reveal the web connection manager when returning to history.
+- Add an Open Connection Manager command to recover hidden views.
+
+## 0.7.1
+
+- Wait for remote Python readiness before sending operation requests.
+- Preserve remote stderr and exit codes when SSH stdin closes early.
+- Install error handlers before sending the initialization payload.
+
+## 0.7.0
+
+- Add a theme-aware web connection manager with visible left-click actions and endpoint details.
+- Keep the existing comparison tree after opening a connection; Close returns to the manager.
+- Combine editing and renaming, and open diffs on comparable-file clicks.
+
+## 0.6.4
+
+- Expand connection Check and Setup actions inline instead of opening a Quick Pick.
+
+## 0.6.3
+
+- Add per-connection inline action menus for SSH checks and key setup.
+- Add inline diff actions for files present on both sides, keeping context menus.
+
+## 0.6.2
+
+- Move New Connection and directional copy actions to toolbar icons.
+- Keep SSH check/setup in each connection context menu, removing ambiguous view-level entries.
+
+## 0.6.1
+
+- Release SSH setup state on task end even without a process exit event.
+- Handle early completion and add terminal-stage cancellation.
+
 ## 0.6.0
 
 - Reuse one SSH/Python session for active-connection scans, diff reads and file transfers.

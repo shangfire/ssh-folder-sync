@@ -2,7 +2,7 @@
 
 [简体中文](SSH-GUIDE.zh-CN.md)
 
-Use **Check SSH Connection** from a connection's context menu or the view menu. Without an active connection, choose a saved connection. Detailed results are in Output → SSH Folder Sync.
+Right-click the intended history connection and choose **Check SSH Connection**. Command-palette invocation uses the active connection, or prompts for a saved connection if none is active. Detailed results are in Output → SSH Folder Sync.
 
 Checks identify the extension host/user, resolve the SSH target/user/port, test non-interactive authentication, try Python 3.7+ commands, and check directory read/traversal access. Write access is not guaranteed by this check. A working Python command can be saved after confirmation.
 
@@ -30,3 +30,5 @@ The wizard's remote installation has not yet been validated against a live Windo
 
 
 Diagnostic and key-installation SSH processes are independent of the normal persistent sync session. They do not borrow an existing Remote SSH editor connection. See [session lifecycle](README.md#ssh-session-lifecycle).
+
+During terminal key installation, Cancel in the progress notification terminates the task and releases operation state. Completed key-file changes are not rolled back.

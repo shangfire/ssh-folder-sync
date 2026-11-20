@@ -28,18 +28,31 @@ async function createJsonSession(
       "ServerAliveCountMax=3",
       "--",
       connection.host,
-      `${python} -u -X utf8 -c "import sys,base64;exec(base64.b64decode(sys.stdin.buffer.readline()))"`,
+      `${python} -u -X utf8 -c "import sys,base64;source=compile(base64.b64decode(sys.stdin.buffer.readline()),'<sfs-session>','exec');print('__SFS_READY__',flush=True);exec(source)"`,
     ],
     { windowsHide: true },
   );
-  child.stdin.write(encoded + "\n");
+
   let pending,
     failure,
     closed = false,
     stderr = "";
+  let readyResolve, readyReject, writeError, errorTimer;
+  const ready = new Promise((resolve, reject) => {
+    readyResolve = resolve;
+    readyReject = reject;
+  });
+  ready.catch(() => {});
+  const startupTimer = setTimeout(() => {
+    fail(Error("SSH/Python startup timed out. " + stderr));
+    child.kill();
+  }, 120000);
   const lines = readline.createInterface({ input: child.stdout });
   function fail(error) {
     failure = error;
+    clearTimeout(startupTimer);
+    clearTimeout(errorTimer);
+    readyReject(error);
     if (pending) {
       clearTimeout(pending.timer);
       pending.reject(error);
@@ -50,13 +63,31 @@ async function createJsonSession(
     stderr = (stderr + chunk.toString()).slice(-8192);
   });
   child.on("error", fail);
-  child.stdin.on("error", fail);
+  child.stdin.on("error", (error) => {
+    writeError = error;
+    errorTimer = setTimeout(() => {
+      fail(Error("SSH input closed: " + (stderr || error.message)));
+      child.kill();
+    }, 300);
+  });
   child.on("close", (code) => {
     closed = true;
-    fail(Error(stderr || "SSH JSON session closed (" + code + ")"));
+    fail(
+      Error(
+        "SSH/Python session exited (code " +
+          code +
+          "): " +
+          (stderr.trim() || writeError?.message || "No remote error output"),
+      ),
+    );
     lines.close();
   });
   lines.on("line", (line) => {
+    if (line === "__SFS_READY__") {
+      clearTimeout(startupTimer);
+      readyResolve();
+      return;
+    }
     if (!pending) return;
     let message;
     try {
@@ -78,6 +109,8 @@ async function createJsonSession(
   });
   function dispose() {
     cancellation?.dispose();
+    clearTimeout(startupTimer);
+    clearTimeout(errorTimer);
     lines.close();
     if (!closed) {
       closed = true;
@@ -90,8 +123,10 @@ async function createJsonSession(
     dispose();
     throw Error("SSH JSON browsing cancelled");
   }
+  child.stdin.write(encoded + "\n");
   return {
-    request(payload) {
+    async request(payload) {
+      await ready;
       if (failure || closed)
         return Promise.reject(failure || Error("SSH JSON session closed"));
       if (pending)

@@ -28,5 +28,7 @@
   "sfs.diagnose": "SSH Sync: 检查 SSH 连接",
   "sfs.diagnose.short": "检查 SSH 连接",
   "sfs.setupKey": "SSH Sync: 配置 SSH 免密登录",
-  "sfs.setupKey.short": "配置 SSH 免密登录"
+  "sfs.setupKey.short": "配置 SSH 免密登录",
+  "sfs.connectionActions": "SSH 连接操作",
+  "sfs.showConnections": "SSH Sync: 打开连接管理页"
 }

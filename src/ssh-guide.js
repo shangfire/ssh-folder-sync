@@ -105,20 +105,67 @@ async function terminalTask(vscode, name, program, args) {
     focus: true,
     panel: vscode.TaskPanelKind.Dedicated,
   };
-  let execution;
-  let finish;
-  const ended = new Promise((resolve) => {
-    finish = resolve;
-  });
-  const listener = vscode.tasks.onDidEndTaskProcess((event) => {
-    if (event.execution === execution) finish(event.exitCode);
-  });
-  try {
-    execution = await vscode.tasks.executeTask(task);
-    return await ended;
-  } finally {
-    listener.dispose();
-  }
+  return vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: name,
+      cancellable: true,
+    },
+    async (_progress, token) => {
+      let execution,
+        settled = false,
+        resolveEnd,
+        rejectEnd,
+        cancelled = false;
+      const ended = new Promise((resolve, reject) => {
+        resolveEnd = resolve;
+        rejectEnd = reject;
+      });
+      const timers = [];
+      function matches(event) {
+        return event.execution === execution || event.execution.task === task;
+      }
+      function finish(code) {
+        if (settled) return;
+        settled = true;
+        resolveEnd(code);
+      }
+      const processListener = vscode.tasks.onDidEndTaskProcess((event) => {
+        if (matches(event)) finish(event.exitCode);
+      });
+      const taskListener = vscode.tasks.onDidEndTask((event) => {
+        if (matches(event)) timers.push(setTimeout(() => finish(undefined), 0));
+      });
+      const cancellation = token.onCancellationRequested(() => {
+        if (settled) return;
+        cancelled = true;
+        execution?.terminate();
+        settled = true;
+        rejectEnd(new vscode.CancellationError());
+      });
+      try {
+        // Observe completion before executeTask can deliver early task events.
+        const started = vscode.tasks.executeTask(task).then((value) => {
+          execution = value;
+          if (cancelled) value.terminate();
+          return value;
+        });
+        started.catch((error) => {
+          if (!settled) {
+            settled = true;
+            rejectEnd(error);
+          }
+        });
+        const code = await ended;
+        return code;
+      } finally {
+        processListener.dispose();
+        taskListener.dispose();
+        cancellation.dispose();
+        timers.forEach(clearTimeout);
+      }
+    },
+  );
 }
 async function diagnose(vscode, record, output, t, save) {
   output.show(true);
@@ -287,6 +334,7 @@ async function setup(vscode, record, output, t) {
     ...sshArgs(record, true),
     platform === "Windows OpenSSH" ? windowsScript(key) : linuxScript(key),
   ]);
+  if (status === undefined) return;
   if (status !== 0)
     throw Error(
       t(
@@ -350,4 +398,11 @@ async function setup(vscode, record, output, t) {
   }
   void vscode.window.showInformationMessage(t("SSH key login verified."));
 }
-module.exports = { diagnose, setup, classify, windowsScript, linuxScript };
+module.exports = {
+  diagnose,
+  setup,
+  classify,
+  windowsScript,
+  linuxScript,
+  terminalTask,
+};

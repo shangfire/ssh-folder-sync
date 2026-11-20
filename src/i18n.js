@@ -140,6 +140,18 @@ Object.assign(zh, {
     "Linux：/home/name/project；Windows：C:\\Users\\name\\project",
 });
 Object.assign(zh, { Back: "返回" });
+Object.assign(zh, {
+  "Check SSH Connection": "检查 SSH 连接",
+  "Set Up SSH Key Login": "配置 SSH 免密登录",
+});
+Object.assign(zh, {
+  "New Connection": "新建连接",
+  "Open and Compare": "打开并比较",
+  "Edit / Rename": "编辑 / 重命名",
+  "No saved connections yet.": "暂无连接，点击新建连接开始。",
+  "Select a connection to see its details.": "选择连接查看详情。",
+  Connections: "连接列表",
+});
 function translator(language) {
   return (text, ...args) => {
     const template = language.toLowerCase().startsWith("zh")

@@ -2,7 +2,7 @@
   "name": "ssh-folder-sync",
   "displayName": "SSH Folder Sync",
   "description": "%description%",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "publisher": "Sware",
   "engines": {
     "vscode": "^1.85.0"
@@ -16,7 +16,8 @@
       {
         "command": "sfs.configure",
         "title": "%sfs.configure%",
-        "shortTitle": "%sfs.configure.short%"
+        "shortTitle": "%sfs.configure.short%",
+        "icon": "$(add)"
       },
       {
         "command": "sfs.refresh",
@@ -27,17 +28,20 @@
       {
         "command": "sfs.upload",
         "title": "%sfs.upload%",
-        "shortTitle": "%sfs.upload.short%"
+        "shortTitle": "%sfs.upload.short%",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "sfs.download",
         "title": "%sfs.download%",
-        "shortTitle": "%sfs.download.short%"
+        "shortTitle": "%sfs.download.short%",
+        "icon": "$(cloud-download)"
       },
       {
         "command": "sfs.diff",
         "title": "%sfs.diff%",
-        "shortTitle": "%sfs.diff.short%"
+        "shortTitle": "%sfs.diff.short%",
+        "icon": "$(diff)"
       },
       {
         "command": "sfs.open",
@@ -68,12 +72,23 @@
       {
         "command": "sfs.diagnose",
         "title": "%sfs.diagnose%",
-        "shortTitle": "%sfs.diagnose.short%"
+        "shortTitle": "%sfs.diagnose.short%",
+        "icon": "$(pulse)"
       },
       {
         "command": "sfs.setupKey",
         "title": "%sfs.setupKey%",
-        "shortTitle": "%sfs.setupKey.short%"
+        "shortTitle": "%sfs.setupKey.short%",
+        "icon": "$(key)"
+      },
+      {
+        "command": "sfs.connectionActions",
+        "title": "%sfs.connectionActions%",
+        "icon": "$(ellipsis)"
+      },
+      {
+        "command": "sfs.showConnections",
+        "title": "%sfs.showConnections%"
       }
     ],
     "views": {
@@ -89,43 +104,33 @@
         {
           "command": "sfs.configure",
           "when": "view == sshFolderSync",
-          "group": "sync@3"
+          "group": "navigation@1"
         },
         {
           "command": "sfs.refresh",
           "when": "view == sshFolderSync && sfs.active",
-          "group": "navigation@1"
+          "group": "navigation@2"
         },
         {
           "command": "sfs.upload",
           "when": "view == sshFolderSync && sfs.active",
-          "group": "sync@1"
+          "group": "navigation@3"
         },
         {
           "command": "sfs.download",
           "when": "view == sshFolderSync && sfs.active",
-          "group": "sync@2"
+          "group": "navigation@4"
         },
         {
           "command": "sfs.close",
           "when": "view == sshFolderSync && sfs.active",
-          "group": "navigation@2"
-        },
-        {
-          "command": "sfs.diagnose",
-          "when": "view == sshFolderSync",
-          "group": "ssh"
-        },
-        {
-          "command": "sfs.setupKey",
-          "when": "view == sshFolderSync",
-          "group": "ssh"
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
         {
           "command": "sfs.diff",
-          "when": "view == sshFolderSync && sfs.active"
+          "when": "view == sshFolderSync && viewItem == sfs.comparableFile"
         },
         {
           "command": "sfs.edit",
@@ -148,6 +153,21 @@
           "command": "sfs.setupKey",
           "when": "view == sshFolderSync && viewItem == sfs.history",
           "group": "ssh"
+        },
+        {
+          "command": "sfs.connectionActions",
+          "when": "view == sshFolderSync && viewItem == sfs.history",
+          "group": "inline@3"
+        },
+        {
+          "command": "sfs.diff",
+          "when": "view == sshFolderSync && viewItem == sfs.comparableFile",
+          "group": "inline@1"
+        },
+        {
+          "command": "sfs.diagnose",
+          "when": "view == sshFolderSync && viewItem == sfs.history",
+          "group": "inline@1"
         }
       ]
     },

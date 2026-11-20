@@ -70,7 +70,7 @@ async function activate(ctx) {
     view.message = cfg
       ? undefined
       : t("Connection history · Extension host: {0}", os.hostname());
-    vscode.commands.executeCommand("setContext", "sfs.active", !!cfg);
+    void vscode.commands.executeCommand("setContext", "sfs.active", !!cfg);
     changed.fire();
   }
   let activeSession, activeSessionKey;
@@ -161,6 +161,16 @@ async function activate(ctx) {
       const item = new vscode.TreeItem(path.posix.basename(p), dir ? 1 : 0);
       item.id = p;
       item.description = translate(states[p]);
+      item.contextValue =
+        local[p]?.type === "file" && remote[p]?.type === "file"
+          ? "sfs.comparableFile"
+          : "sfs.syncItem";
+      if (item.contextValue === "sfs.comparableFile")
+        item.command = {
+          command: "sfs.diff",
+          title: t("Show Diff"),
+          arguments: [p],
+        };
       item.resourceUri = vscode.Uri.from({
         scheme: "ssh-folder-sync",
         path: "/" + p,
@@ -181,7 +191,7 @@ async function activate(ctx) {
           ? []
           : [...history]
               .sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0))
-              .map((x) => x.id)
+              .map((record) => record.id)
               .concat("__new__");
       if (parent === "__sfs_local__" || parent === "__sfs_remote__") return [];
       const children = [
@@ -213,6 +223,19 @@ async function activate(ctx) {
     showCollapseAll: true,
   });
   ctx.subscriptions.push(view, changed);
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand("sfs.showConnections", () => {
+      if (busy) {
+        void vscode.window.showInformationMessage(
+          t(
+            "An operation is running. Wait or cancel it in the progress notification.",
+          ),
+        );
+        return;
+      }
+      close();
+    }),
+  );
   header();
   view.onDidChangeCheckboxState(async (e) => {
     if (!cfg) return;
@@ -776,6 +799,22 @@ async function activate(ctx) {
     );
     return selected?.record;
   }
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand("sfs.connectionActions", async (id) => {
+      const record = history.find((item) => item.id === id);
+      if (!record) return;
+      const action = await vscode.window.showQuickPick(
+        [
+          { label: t("Set Up SSH Key Login"), command: "sfs.setupKey" },
+          { label: t("Edit"), command: "sfs.edit" },
+          { label: t("Rename"), command: "sfs.rename" },
+          { label: t("Delete"), command: "sfs.delete" },
+        ],
+        { title: record.name, placeHolder: record.host },
+      );
+      if (action) await vscode.commands.executeCommand(action.command, id);
+    }),
+  );
   command("diagnose", async (id) => {
     const record = await guideRecord(id);
     if (record)
